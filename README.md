@@ -1,10 +1,10 @@
 # resume-bullet-rewriter
 
-V0: a tiny **rule-based** CLI that rewrites one resume bullet (no API keys, no network).
+V1: a **rule-based** CLI that rewrites resume bullets with **conservative** verb/phrasing swaps. **No API keys, no network, no invented metrics.**
 
 ## Requirements
 
-- Python **3.10+** recommended (uses `list[str]` type hints; 3.9+ works if you adjust hints).
+- Python **3.10+** (stdlib only; see `requirements.txt`).
 
 ## Setup (optional)
 
@@ -15,22 +15,36 @@ source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-There are no third-party dependencies in V0; `pip install -r requirements.txt` is optional and should do nothing beyond satisfying the file.
+## Usage
 
-## Run
+**Single bullet** (quote if it contains spaces):
 
 ```bash
-python main.py "Built a model for ad prediction"
+python main.py "helped with onboarding documentation"
 ```
 
-Example output:
+**Many bullets** (one per line; empty lines are skipped):
 
-```text
-Rewritten bullet:
-Developed a predictive modeling pipeline for ad targeting, improving signal quality and enabling more reliable performance analysis.
+```bash
+python main.py --file bullets.txt
+# short form:
+python main.py -f bullets.txt
 ```
 
-## Notes
+## Output
 
-- **V0** uses small string rules in `main.py`. Swap in an LLM or richer logic later if you want.
-- Pass the bullet in **one quoted argument** so spaces stay in a single string.
+For each bullet:
+
+- **Original Bullet**
+- **Rewritten Bullet**
+- **Changes** (which rules fired, or a note when none matched)
+
+File mode prints a `---` separator between bullets.
+
+## Design
+
+- **`rules.py`** — patterns and replacements only (no logic).
+- **`rewriter.py`** — applies rules in a fixed order; returns a `RewriteResult` dataclass.
+- **`main.py`** — CLI and printing.
+
+Rules are **deterministic**: same input → same output. They **do not** add numbers, percentages, or business-impact claims.
