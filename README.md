@@ -31,6 +31,13 @@ python main.py --file bullets.txt
 python main.py -f bullets.txt
 ```
 
+**Stdin** (use `-` instead of a path):
+
+```bash
+cat bullets.txt | python main.py --file -
+printf '%s\n' "worked on the API" | python main.py -f -
+```
+
 ## Output
 
 For each bullet:

@@ -43,9 +43,9 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "-f",
         "--file",
-        type=Path,
+        type=str,
         metavar="PATH",
-        help="Text file with one bullet per line (empty lines skipped).",
+        help='Text file with one bullet per line (empty lines skipped). Use "-" for stdin.',
     )
     parser.add_argument(
         "bullet",
@@ -66,11 +66,14 @@ def main() -> None:
         sys.exit(2)
 
     if args.file is not None:
-        path = args.file
-        if not path.is_file():
-            print(f"Error: not a file: {path}", file=sys.stderr)
-            sys.exit(1)
-        text = path.read_text(encoding="utf-8")
+        if args.file == "-":
+            text = sys.stdin.read()
+        else:
+            path = Path(args.file)
+            if not path.is_file():
+                print(f"Error: not a file: {path}", file=sys.stderr)
+                sys.exit(1)
+            text = path.read_text(encoding="utf-8")
         first = True
         for line in text.splitlines():
             raw = line.strip()
