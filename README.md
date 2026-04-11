@@ -27,7 +27,6 @@ python main.py "helped with onboarding documentation"
 
 ```bash
 python main.py --file bullets.txt
-# short form:
 python main.py -f bullets.txt
 ```
 
@@ -48,10 +47,28 @@ For each bullet:
 
 File mode prints a `---` separator between bullets.
 
+## Optional: OpenAI API smoke test (`scripts/`)
+
+The main CLI above is **rules-only** (no network). To **manually verify** your OpenAI API key and see a raw `chat/completions` JSON response, use the helper script:
+
+```bash
+export OPENAI_API_KEY='sk-...'   # never commit real keys
+./scripts/openai_resume_smoke.sh
+./scripts/openai_resume_smoke.sh "Was part of the release rotation"
+```
+
+- **First argument** (optional): the resume bullet text to send as the `user` message. If omitted, a default example bullet is used.
+- **Environment variables** (optional):
+  - `OPENAI_MODEL` — defaults to `gpt-4o-mini`
+  - `OPENAI_API_BASE` — defaults to `https://api.openai.com/v1` (any OpenAI-compatible base URL)
+
+The script builds JSON with **Python** (`json.dumps`) so bullets with quotes or special characters are safe; it does **not** embed your API key in the file—only reads `OPENAI_API_KEY` from the environment.
+
 ## Design
 
 - **`rules.py`** — patterns and replacements only (no logic).
 - **`rewriter.py`** — applies rules in a fixed order; returns a `RewriteResult` dataclass.
 - **`main.py`** — CLI and printing.
+- **`scripts/openai_resume_smoke.sh`** — optional local curl + Python JSON helper for OpenAI (not used by `main.py`).
 
 Rules are **deterministic**: same input → same output. They **do not** add numbers, percentages, or business-impact claims.
