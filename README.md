@@ -18,6 +18,18 @@ source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+## Tests (development)
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements-dev.txt
+python -m pytest tests/ -v
+```
+
+- **`tests/test_rewriter.py`** — rule engine: whitespace, empty input, phrase/leading rules, no-match normalization, idempotency.
+- **`tests/test_llm_openai.py`** — OpenAI client with **mocked** `urllib` (no network, no real key). Covers missing key, success parsing, HTTP errors, bad JSON shape, non-string `content`.
+
 ## Usage
 
 **Single bullet** (quote if it contains spaces):

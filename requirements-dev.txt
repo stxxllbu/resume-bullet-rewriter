@@ -1,0 +1,2 @@
+# Development / CI only. Runtime CLI still needs no pip deps (see requirements.txt).
+pytest>=7.0
