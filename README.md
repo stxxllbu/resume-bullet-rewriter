@@ -1,6 +1,9 @@
 # resume-bullet-rewriter
 
-V1: a **rule-based** CLI that rewrites resume bullets with **conservative** verb/phrasing swaps. **No API keys, no network, no invented metrics.**
+CLI that rewrites resume bullets.
+
+- **Default (no flag):** **rule-based** swaps only—**no API keys, no network**, no invented metrics.
+- **`--llm`:** calls **OpenAI** Chat Completions (`llm_openai.py`). Requires `OPENAI_API_KEY` and network. **No fallback to rules:** if the key is missing or the request fails, the CLI prints an error and exits non-zero.
 
 ## Requirements
 
@@ -23,6 +26,19 @@ pip install -r requirements.txt
 python main.py "helped with onboarding documentation"
 ```
 
+**OpenAI rewrite** (same input shapes as above; add `--llm`):
+
+```bash
+export OPENAI_API_KEY='sk-...'   # never commit real keys
+python main.py --llm "worked on the internal API"
+python main.py --llm -f bullets.txt
+```
+
+Optional environment variables (same defaults as `scripts/openai_resume_smoke.sh`):
+
+- `OPENAI_MODEL` — default `gpt-4o-mini`
+- `OPENAI_API_BASE` — default `https://api.openai.com/v1` (OpenAI-compatible endpoints)
+
 **Many bullets** (one per line; empty lines are skipped):
 
 ```bash
@@ -43,13 +59,13 @@ For each bullet:
 
 - **Original Bullet**
 - **Rewritten Bullet**
-- **Changes** (which rules fired, or a note when none matched)
+- **Changes** — with rules: which rules fired (or a note when none matched). With `--llm`: a line such as `OpenAI rewrite (<model>)`.
 
 File mode prints a `---` separator between bullets.
 
 ## Optional: OpenAI API smoke test (`scripts/`)
 
-The main CLI above is **rules-only** (no network). To **manually verify** your OpenAI API key and see a raw `chat/completions` JSON response, use the helper script:
+To **manually verify** your key and inspect a **raw** `chat/completions` JSON response (without the formatted CLI sections above), use:
 
 ```bash
 export OPENAI_API_KEY='sk-...'   # never commit real keys
@@ -68,7 +84,8 @@ The script builds JSON with **Python** (`json.dumps`) so bullets with quotes or 
 
 - **`rules.py`** — patterns and replacements only (no logic).
 - **`rewriter.py`** — applies rules in a fixed order; returns a `RewriteResult` dataclass.
-- **`main.py`** — CLI and printing.
-- **`scripts/openai_resume_smoke.sh`** — optional local curl + Python JSON helper for OpenAI (not used by `main.py`).
+- **`llm_openai.py`** — OpenAI HTTPS client + prompt; returns `RewriteResult` for `--llm`.
+- **`main.py`** — CLI and printing (`--llm` toggles OpenAI vs rules).
+- **`scripts/openai_resume_smoke.sh`** — optional curl + Python JSON helper (raw API response).
 
-Rules are **deterministic**: same input → same output. They **do not** add numbers, percentages, or business-impact claims.
+Rules are **deterministic**: same input → same output. They **do not** add numbers, percentages, or business-impact claims. **`--llm` output is not deterministic** (model-dependent).

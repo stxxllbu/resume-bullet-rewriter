@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-V1 CLI: rule-based resume bullet rewriter (no API).
+CLI: rule-based resume bullet rewriter; optional --llm via OpenAI.
 """
 
 from __future__ import annotations
@@ -9,6 +9,7 @@ import argparse
 import sys
 from pathlib import Path
 
+from llm_openai import OpenAIRewriteError, rewrite_with_openai
 from rewriter import RewriteResult, rewrite
 
 
@@ -30,15 +31,24 @@ def format_output(result: RewriteResult) -> str:
     return "\n".join(lines)
 
 
-def run_bullet(text: str) -> None:
+def run_bullet(text: str, *, use_openai: bool) -> None:
     """Rewrite and print one bullet."""
-    print(format_output(rewrite(text)))
+    if use_openai:
+        result = rewrite_with_openai(text)
+    else:
+        result = rewrite(text)
+    print(format_output(result))
     print()
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Rewrite resume bullets with conservative rules (V1, no API).",
+        description="Rewrite resume bullets: default rules (local), or --llm (OpenAI API).",
+    )
+    parser.add_argument(
+        "--llm",
+        action="store_true",
+        help="Use OpenAI Chat Completions (needs OPENAI_API_KEY and network).",
     )
     parser.add_argument(
         "-f",
@@ -65,6 +75,8 @@ def main() -> None:
         print("Error: use either --file or a bullet string, not both.", file=sys.stderr)
         sys.exit(2)
 
+    use_openai = args.llm
+
     if args.file is not None:
         if args.file == "-":
             text = sys.stdin.read()
@@ -82,11 +94,19 @@ def main() -> None:
             if not first:
                 print("---")
                 print()
-            run_bullet(raw)
+            try:
+                run_bullet(raw, use_openai=use_openai)
+            except OpenAIRewriteError as e:
+                print(f"Error: {e}", file=sys.stderr)
+                sys.exit(1)
             first = False
         return
 
-    run_bullet(args.bullet)
+    try:
+        run_bullet(args.bullet, use_openai=use_openai)
+    except OpenAIRewriteError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
