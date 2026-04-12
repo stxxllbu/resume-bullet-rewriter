@@ -4,6 +4,7 @@ CLI that rewrites resume bullets.
 
 - **Default (no flag):** **rule-based** swaps only—**no API keys, no network**, no invented metrics.
 - **`--llm`:** calls **OpenAI** Chat Completions (`llm_openai.py`). Requires `OPENAI_API_KEY` and network. **No fallback to rules:** if the key is missing or the request fails, the CLI prints an error and exits non-zero.
+- **`--ollama`:** calls **local Ollama** `/api/chat` (`llm_ollama.py`). Requires the **Ollama service** running (e.g. `ollama serve` or systemd) and the model pulled (default `qwen2.5:7b`). **Use `--llm` or `--ollama`, not both.** No fallback to rules on failure.
 
 ## Requirements
 
@@ -29,6 +30,7 @@ python -m pytest tests/ -v
 
 - **`tests/test_rewriter.py`** — rule engine: whitespace, empty input, phrase/leading rules, no-match normalization, idempotency.
 - **`tests/test_llm_openai.py`** — OpenAI client with **mocked** `urllib` (no network, no real key). Covers missing key, success parsing, HTTP errors, bad JSON shape, non-string `content`.
+- **`tests/test_llm_ollama.py`** — Ollama client with **mocked** `urllib` (no Ollama process). Covers empty input, success parsing, HTTP / URL errors, bad JSON shape, non-string `content`.
 
 ## Usage
 
@@ -51,6 +53,19 @@ Optional environment variables (same defaults as `scripts/openai_resume_smoke.sh
 - `OPENAI_MODEL` — default `gpt-4o-mini`
 - `OPENAI_API_BASE` — default `https://api.openai.com/v1` (OpenAI-compatible endpoints)
 
+**Ollama rewrite** (local HTTP; add `--ollama`; same input shapes as OpenAI):
+
+```bash
+# Ollama must be running; model must exist locally, e.g. ollama pull qwen2.5:7b
+python main.py --ollama "worked on the internal API"
+python main.py --ollama -f bullets.txt
+```
+
+Optional environment variables:
+
+- `OLLAMA_HOST` — default `http://127.0.0.1:11434`
+- `OLLAMA_MODEL` — default `qwen2.5:7b`
+
 **Many bullets** (one per line; empty lines are skipped):
 
 ```bash
@@ -71,7 +86,7 @@ For each bullet:
 
 - **Original Bullet**
 - **Rewritten Bullet**
-- **Changes** — with rules: which rules fired (or a note when none matched). With `--llm`: a line such as `OpenAI rewrite (<model>)`.
+- **Changes** — with rules: which rules fired (or a note when none matched). With `--llm`: a line such as `OpenAI rewrite (<model>)`. With `--ollama`: `Ollama rewrite (<model>)`.
 
 File mode prints a `---` separator between bullets.
 
@@ -97,7 +112,8 @@ The script builds JSON with **Python** (`json.dumps`) so bullets with quotes or 
 - **`rules.py`** — patterns and replacements only (no logic).
 - **`rewriter.py`** — applies rules in a fixed order; returns a `RewriteResult` dataclass.
 - **`llm_openai.py`** — OpenAI HTTPS client + prompt; returns `RewriteResult` for `--llm`.
-- **`main.py`** — CLI and printing (`--llm` toggles OpenAI vs rules).
+- **`llm_ollama.py`** — Ollama `/api/chat` client + same prompt as OpenAI; returns `RewriteResult` for `--ollama`.
+- **`main.py`** — CLI and printing (`--llm` / `--ollama` vs default rules).
 - **`scripts/openai_resume_smoke.sh`** — optional curl + Python JSON helper (raw API response).
 
-Rules are **deterministic**: same input → same output. They **do not** add numbers, percentages, or business-impact claims. **`--llm` output is not deterministic** (model-dependent).
+Rules are **deterministic**: same input → same output. They **do not** add numbers, percentages, or business-impact claims. **`--llm` and `--ollama` output are not deterministic** (sampling / model-dependent).

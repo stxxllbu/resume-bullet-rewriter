@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-CLI: rule-based resume bullet rewriter; optional --llm via OpenAI.
+CLI: rule-based resume bullet rewriter; optional --llm (OpenAI) or --ollama.
 """
 
 from __future__ import annotations
@@ -9,6 +9,7 @@ import argparse
 import sys
 from pathlib import Path
 
+from llm_ollama import OllamaRewriteError, rewrite_with_ollama
 from llm_openai import OpenAIRewriteError, rewrite_with_openai
 from rewriter import RewriteResult, rewrite
 
@@ -31,10 +32,17 @@ def format_output(result: RewriteResult) -> str:
     return "\n".join(lines)
 
 
-def run_bullet(text: str, *, use_openai: bool) -> None:
+def run_bullet(
+    text: str,
+    *,
+    use_openai: bool = False,
+    use_ollama: bool = False,
+) -> None:
     """Rewrite and print one bullet."""
     if use_openai:
         result = rewrite_with_openai(text)
+    elif use_ollama:
+        result = rewrite_with_ollama(text)
     else:
         result = rewrite(text)
     print(format_output(result))
@@ -43,12 +51,20 @@ def run_bullet(text: str, *, use_openai: bool) -> None:
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Rewrite resume bullets: default rules (local), or --llm (OpenAI API).",
+        description=(
+            "Rewrite resume bullets: default rules (local), --llm (OpenAI), "
+            "or --ollama (local Ollama HTTP API)."
+        ),
     )
     parser.add_argument(
         "--llm",
         action="store_true",
         help="Use OpenAI Chat Completions (needs OPENAI_API_KEY and network).",
+    )
+    parser.add_argument(
+        "--ollama",
+        action="store_true",
+        help="Use local Ollama /api/chat (needs ollama serve; default http://127.0.0.1:11434).",
     )
     parser.add_argument(
         "-f",
@@ -74,8 +90,12 @@ def main() -> None:
     if args.file is not None and args.bullet is not None:
         print("Error: use either --file or a bullet string, not both.", file=sys.stderr)
         sys.exit(2)
+    if args.llm and args.ollama:
+        print("Error: use either --llm or --ollama, not both.", file=sys.stderr)
+        sys.exit(2)
 
     use_openai = args.llm
+    use_ollama = args.ollama
 
     if args.file is not None:
         if args.file == "-":
@@ -95,16 +115,16 @@ def main() -> None:
                 print("---")
                 print()
             try:
-                run_bullet(raw, use_openai=use_openai)
-            except OpenAIRewriteError as e:
+                run_bullet(raw, use_openai=use_openai, use_ollama=use_ollama)
+            except (OpenAIRewriteError, OllamaRewriteError) as e:
                 print(f"Error: {e}", file=sys.stderr)
                 sys.exit(1)
             first = False
         return
 
     try:
-        run_bullet(args.bullet, use_openai=use_openai)
-    except OpenAIRewriteError as e:
+        run_bullet(args.bullet, use_openai=use_openai, use_ollama=use_ollama)
+    except (OpenAIRewriteError, OllamaRewriteError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
