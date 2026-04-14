@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-CLI: rule-based resume bullet rewriter; optional --llm (OpenAI) or --ollama.
+CLI: resume bullet rewriter with a unified --backend selector.
 """
 
 from __future__ import annotations
@@ -32,39 +32,36 @@ def format_output(result: RewriteResult) -> str:
     return "\n".join(lines)
 
 
-def run_bullet(
-    text: str,
-    *,
-    use_openai: bool = False,
-    use_ollama: bool = False,
-) -> None:
+def rewrite_with_backend(raw: str, backend: str) -> RewriteResult:
+    """Dispatch one rewrite request to the selected backend."""
+    if backend == "rules":
+        return rewrite(raw)
+    if backend == "openai":
+        return rewrite_with_openai(raw)
+    if backend == "ollama":
+        return rewrite_with_ollama(raw)
+    raise ValueError(f"Unsupported backend: {backend}")
+
+
+def run_bullet(text: str, backend: str) -> None:
     """Rewrite and print one bullet."""
-    if use_openai:
-        result = rewrite_with_openai(text)
-    elif use_ollama:
-        result = rewrite_with_ollama(text)
-    else:
-        result = rewrite(text)
+    result = rewrite_with_backend(text, backend)
     print(format_output(result))
     print()
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description=(
-            "Rewrite resume bullets: default rules (local), --llm (OpenAI), "
-            "or --ollama (local Ollama HTTP API)."
+        description="Rewrite resume bullets with a selectable backend.",
+    )
+    parser.add_argument(
+        "--backend",
+        choices=["rules", "openai", "ollama"],
+        default="rules",
+        help=(
+            "Rewrite backend: rules (local rule-based rewrite), "
+            "openai (OpenAI API), ollama (local Ollama)."
         ),
-    )
-    parser.add_argument(
-        "--llm",
-        action="store_true",
-        help="Use OpenAI Chat Completions (needs OPENAI_API_KEY and network).",
-    )
-    parser.add_argument(
-        "--ollama",
-        action="store_true",
-        help="Use local Ollama /api/chat (needs ollama serve; default http://127.0.0.1:11434).",
     )
     parser.add_argument(
         "-f",
@@ -90,41 +87,32 @@ def main() -> None:
     if args.file is not None and args.bullet is not None:
         print("Error: use either --file or a bullet string, not both.", file=sys.stderr)
         sys.exit(2)
-    if args.llm and args.ollama:
-        print("Error: use either --llm or --ollama, not both.", file=sys.stderr)
-        sys.exit(2)
-
-    use_openai = args.llm
-    use_ollama = args.ollama
-
-    if args.file is not None:
-        if args.file == "-":
-            text = sys.stdin.read()
-        else:
-            path = Path(args.file)
-            if not path.is_file():
-                print(f"Error: not a file: {path}", file=sys.stderr)
-                sys.exit(1)
-            text = path.read_text(encoding="utf-8")
-        first = True
-        for line in text.splitlines():
-            raw = line.strip()
-            if not raw:
-                continue
-            if not first:
-                print("---")
-                print()
-            try:
-                run_bullet(raw, use_openai=use_openai, use_ollama=use_ollama)
-            except (OpenAIRewriteError, OllamaRewriteError) as e:
-                print(f"Error: {e}", file=sys.stderr)
-                sys.exit(1)
-            first = False
-        return
+    backend = args.backend
 
     try:
-        run_bullet(args.bullet, use_openai=use_openai, use_ollama=use_ollama)
-    except (OpenAIRewriteError, OllamaRewriteError) as e:
+        if args.file is not None:
+            if args.file == "-":
+                text = sys.stdin.read()
+            else:
+                path = Path(args.file)
+                if not path.is_file():
+                    print(f"Error: not a file: {path}", file=sys.stderr)
+                    sys.exit(1)
+                text = path.read_text(encoding="utf-8")
+            first = True
+            for line in text.splitlines():
+                raw = line.strip()
+                if not raw:
+                    continue
+                if not first:
+                    print("---")
+                    print()
+                run_bullet(raw, backend)
+                first = False
+            return
+
+        run_bullet(args.bullet, backend)
+    except (OpenAIRewriteError, OllamaRewriteError, ValueError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
