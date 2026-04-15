@@ -1,0 +1,20 @@
+worked on the internal API
+was part of the release rotation
+helped with onboarding documentation
+assisted with writing data validation scripts
+used python to clean noisy event logs
+worked on migrating legacy ETL jobs
+helped to build dashboards for weekly reviews
+was involved in model evaluation experiments
+made a script to automate report generation
+did regression testing before each release
+used SQL to investigate data quality issues
+worked on improving training pipeline reliability
+helped with incident follow-up notes
+assisted with preparing experiment summaries
+was part of cross-team design discussions
+worked on feature engineering for ranking model
+used notebooks to analyze user behavior trends
+helped to update runbooks for on-call handoff
+worked on internal tooling for annotation workflows
+assisted with documenting API edge cases

@@ -83,6 +83,27 @@ cat bullets.txt | python main.py --file -
 printf '%s\n' "worked on the API" | python main.py -f -
 ```
 
+## Benchmark (V0)
+
+Run one dataset across multiple backends and collect comparable results.
+
+```bash
+# one bullet per line
+python bench.py --input data/bullets.txt
+
+# select backends explicitly
+python bench.py --input data/bullets.txt --backends rules,openai,ollama
+
+# optional controls
+python bench.py --input data/bullets.txt --max-samples 100 --verbose
+```
+
+Outputs are saved under `benchmark_runs/<timestamp>/` by default:
+
+- `results.jsonl` — one row per `(input, backend)` run
+- `summary.json` — aggregated success/latency metrics per backend
+- `meta.json` — run configuration metadata
+
 ## Output
 
 For each bullet:
@@ -117,6 +138,8 @@ The script builds JSON with **Python** (`json.dumps`) so bullets with quotes or 
 - **`llm_openai.py`** — OpenAI HTTPS client + prompt; returns `RewriteResult` for `--backend openai`.
 - **`llm_ollama.py`** — Ollama `/api/chat` client + same prompt as OpenAI; returns `RewriteResult` for `--backend ollama`.
 - **`main.py`** — CLI and printing (`--backend rules|openai|ollama`).
+- **`benchmark_utils.py`** — helper functions for V0 benchmarking (load/run/summarize/write).
+- **`bench.py`** — benchmark runner CLI for multi-backend comparisons.
 - **`scripts/openai_resume_smoke.sh`** — optional curl + Python JSON helper (raw API response).
 
 Rules are **deterministic**: same input → same output. They **do not** add numbers, percentages, or business-impact claims. **`--backend openai` and `--backend ollama` output are not deterministic** (sampling / model-dependent).
