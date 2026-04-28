@@ -43,8 +43,8 @@ def rewrite_with_backend(raw: str, backend: str) -> RewriteResult:
     raise ValueError(f"Unsupported backend: {backend}")
 
 
-def run_bullet(text: str, backend: str) -> None:
-    """Rewrite and print one bullet."""
+def run_one(text: str, backend: str) -> None:
+    """Rewrite and print one text input."""
     result = rewrite_with_backend(text, backend)
     print(format_output(result))
     print("")
@@ -69,22 +69,20 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         help='Text file with one bullet per line (empty lines skipped). Use "-" for stdin.',
     )
     parser.add_argument(
-        "bullet",
+        "text",
         nargs="?",
-        help="Single bullet as one argument (quote if it contains spaces).",
+        help="Single text input as one argument (quote if it contains spaces).",
     )
-    args = parser.parse_args(argv)
-    print("args", args)
-    return args
+    return parser.parse_args(argv)
 
 
 def main() -> None:
     args = parse_args(sys.argv[1:])
 
-    if args.file is None and args.bullet is None:
+    if args.file is None and args.text is None:
         print("Error: provide either --file PATH or a bullet string.", file=sys.stderr)
         sys.exit(2)
-    if args.file is not None and args.bullet is not None:
+    if args.file is not None and args.text is not None:
         print("Error: use either --file or a bullet string, not both.", file=sys.stderr)
         sys.exit(2)
     backend = args.backend
@@ -107,11 +105,11 @@ def main() -> None:
                 if not first:
                     print("---")
                     print()
-                run_bullet(raw, backend)
+                run_one(raw, backend)
                 first = False
             return
 
-        run_bullet(args.bullet, backend)
+        run_one(args.text, backend)
     except (OpenAIRewriteError, OllamaRewriteError, ValueError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)

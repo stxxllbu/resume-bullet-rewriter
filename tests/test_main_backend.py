@@ -13,7 +13,7 @@ from rewriter import RewriteResult
 def test_parse_args_defaults_to_rules_backend() -> None:
     args = main.parse_args(["worked on the internal API"])
     assert args.backend == "rules"
-    assert args.bullet == "worked on the internal API"
+    assert args.text == "worked on the internal API"
 
 
 def test_parse_args_accepts_openai_backend() -> None:
