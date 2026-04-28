@@ -47,7 +47,7 @@ def run_bullet(text: str, backend: str) -> None:
     """Rewrite and print one bullet."""
     result = rewrite_with_backend(text, backend)
     print(format_output(result))
-    print()
+    print("")
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
@@ -66,8 +66,6 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "-f",
         "--file",
-        type=str,
-        metavar="PATH",
         help='Text file with one bullet per line (empty lines skipped). Use "-" for stdin.',
     )
     parser.add_argument(
@@ -75,7 +73,9 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         nargs="?",
         help="Single bullet as one argument (quote if it contains spaces).",
     )
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    print("args", args)
+    return args
 
 
 def main() -> None:
