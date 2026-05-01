@@ -5,6 +5,7 @@ CLI that rewrites resume bullets.
 - **Default (no flag):** **rule-based** swaps only—**no API keys, no network**, no invented metrics.
 - **`--backend openai`:** calls **OpenAI** Chat Completions (`llm_openai.py`). Requires `OPENAI_API_KEY` and network. **No fallback to rules:** if the key is missing or the request fails, the CLI prints an error and exits non-zero.
 - **`--backend ollama`:** calls **local Ollama** `/api/chat` (`llm_ollama.py`). Requires the **Ollama service** running (e.g. `ollama serve` or systemd) and the model pulled (default `qwen2.5:7b`). No fallback to rules on failure.
+- **`--backend agent_jd`:** calls a **2-step OpenAI pipeline** (`llm_agent_jd.py`) that analyzes bullet+JD, plans rewrite, rewrites, then applies `faithfulness_guard.py`. Requires `OPENAI_API_KEY` and `--jd-file`.
 
 ## Requirements
 
@@ -41,6 +42,7 @@ python main.py "helped with onboarding documentation"
 python main.py --backend rules "helped with onboarding documentation"
 python main.py --backend openai "worked on the internal API"
 python main.py --backend ollama "worked on the internal API"
+python main.py --backend agent_jd --jd-file data/jd_ml_platform.txt "worked on improving training pipeline reliability"
 ```
 
 **OpenAI rewrite** (same input shapes as above; set `--backend openai`):
@@ -55,6 +57,18 @@ Optional environment variables (same defaults as `scripts/openai_resume_smoke.sh
 
 - `OPENAI_MODEL` — default `gpt-4o-mini`
 - `OPENAI_API_BASE` — default `https://api.openai.com/v1` (OpenAI-compatible endpoints)
+
+**Agent JD rewrite** (JD-aware; requires `--jd-file`):
+
+```bash
+export OPENAI_API_KEY='sk-...'   # never commit real keys
+python main.py --backend agent_jd --jd-file data/jd_ml_platform.txt "worked on improving training pipeline reliability"
+
+# print full intermediate artifact JSON (requirements/gaps/plan/risk_flags)
+python main.py --backend agent_jd --jd-file data/jd_ml_platform.txt --json "worked on improving training pipeline reliability"
+```
+
+Sample JD file is provided at `data/jd_ml_platform.txt`.
 
 **Ollama rewrite** (local HTTP; set `--backend ollama`; same input shapes as OpenAI):
 
@@ -137,7 +151,10 @@ The script builds JSON with **Python** (`json.dumps`) so bullets with quotes or 
 - **`rewriter.py`** — applies rules in a fixed order; returns a `RewriteResult` dataclass.
 - **`llm_openai.py`** — OpenAI HTTPS client + prompt; returns `RewriteResult` for `--backend openai`.
 - **`llm_ollama.py`** — Ollama `/api/chat` client + same prompt as OpenAI; returns `RewriteResult` for `--backend ollama`.
-- **`main.py`** — CLI and printing (`--backend rules|openai|ollama`).
+- **`agent_jd_types.py`** — dataclasses for JD-aware rewrite artifacts.
+- **`faithfulness_guard.py`** — rule-based risk flags for potentially unsupported claims.
+- **`llm_agent_jd.py`** — 2-step OpenAI pipeline for `--backend agent_jd`; returns both artifact and `RewriteResult`-compatible output.
+- **`main.py`** — CLI and printing (`--backend rules|openai|ollama|agent_jd`, `--jd-file`, `--json`).
 - **`benchmark_utils.py`** — helper functions for V0 benchmarking (load/run/summarize/write).
 - **`bench.py`** — benchmark runner CLI for multi-backend comparisons.
 - **`scripts/openai_resume_smoke.sh`** — optional curl + Python JSON helper (raw API response).

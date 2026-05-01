@@ -1,0 +1,14 @@
+Senior Machine Learning Engineer (Platform)
+
+We are looking for an engineer to build and operate production ML systems.
+
+Must-have requirements:
+- Experience deploying machine learning models to production services.
+- Strong Python and SQL skills for data and model pipelines.
+- Ability to improve reliability of batch and online data pipelines.
+- Understanding of latency, monitoring, and incident response for model-serving systems.
+- Collaboration with cross-functional teams (product, data science, infrastructure).
+
+Nice-to-have requirements:
+- Experience with feature stores, model evaluation frameworks, or A/B testing workflows.
+- Experience maintaining internal tooling for experimentation or annotation operations.

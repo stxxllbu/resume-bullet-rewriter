@@ -6,9 +6,16 @@ CLI: resume bullet rewriter with a unified --backend selector.
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
+from llm_agent_jd import (
+    AgentJDRewriteError,
+    artifact_to_json_dict,
+    rewrite_with_agent_jd,
+    run_agent_jd_pipeline,
+)
 from llm_ollama import OllamaRewriteError, rewrite_with_ollama
 from llm_openai import OpenAIRewriteError, rewrite_with_openai
 from rewriter import RewriteResult, rewrite
@@ -32,7 +39,7 @@ def format_output(result: RewriteResult) -> str:
     return "\n".join(lines)
 
 
-def rewrite_with_backend(raw: str, backend: str) -> RewriteResult:
+def rewrite_with_backend(raw: str, backend: str, jd_text: str | None = None) -> RewriteResult:
     """Dispatch one rewrite request to the selected backend."""
     if backend == "rules":
         return rewrite(raw)
@@ -40,12 +47,24 @@ def rewrite_with_backend(raw: str, backend: str) -> RewriteResult:
         return rewrite_with_openai(raw)
     if backend == "ollama":
         return rewrite_with_ollama(raw)
+    if backend == "agent_jd":
+        if jd_text is None:
+            raise ValueError("agent_jd requires --jd-file")
+        return rewrite_with_agent_jd(raw, jd_text)
     raise ValueError(f"Unsupported backend: {backend}")
 
 
-def run_one(text: str, backend: str) -> None:
+def run_one(text: str, backend: str, jd_text: str | None = None, json_output: bool = False) -> None:
     """Rewrite and print one text input."""
-    result = rewrite_with_backend(text, backend)
+    if backend == "agent_jd" and json_output:
+        if jd_text is None:
+            raise ValueError("agent_jd requires --jd-file")
+        artifact = run_agent_jd_pipeline(text, jd_text)
+        print(json.dumps(artifact_to_json_dict(artifact), ensure_ascii=False, indent=2))
+        print("")
+        return
+
+    result = rewrite_with_backend(text, backend, jd_text=jd_text)
     print(format_output(result))
     print("")
 
@@ -56,12 +75,22 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     )
     parser.add_argument(
         "--backend",
-        choices=["rules", "openai", "ollama"],
+        choices=["rules", "openai", "ollama", "agent_jd"],
         default="rules",
         help=(
             "Rewrite backend: rules (local rule-based rewrite), "
-            "openai (OpenAI API), ollama (local Ollama)."
+            "openai (OpenAI API), ollama (local Ollama), "
+            "agent_jd (JD-aware 2-step pipeline)."
         ),
+    )
+    parser.add_argument(
+        "--jd-file",
+        help="Job description text file. Required when --backend agent_jd.",
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="With --backend agent_jd, print full pipeline artifact JSON.",
     )
     parser.add_argument(
         "-f",
@@ -86,6 +115,16 @@ def main() -> None:
         print("Error: use either --file or a bullet string, not both.", file=sys.stderr)
         sys.exit(2)
     backend = args.backend
+    jd_text: str | None = None
+    if backend == "agent_jd":
+        if not args.jd_file:
+            print("Error: --jd-file is required when --backend agent_jd.", file=sys.stderr)
+            sys.exit(2)
+        jd_path = Path(args.jd_file)
+        if not jd_path.is_file():
+            print(f"Error: not a file: {jd_path}", file=sys.stderr)
+            sys.exit(1)
+        jd_text = jd_path.read_text(encoding="utf-8")
 
     try:
         if args.file is not None:
@@ -105,12 +144,12 @@ def main() -> None:
                 if not first:
                     print("---")
                     print()
-                run_one(raw, backend)
+                run_one(raw, backend, jd_text=jd_text, json_output=args.json)
                 first = False
             return
 
-        run_one(args.text, backend)
-    except (OpenAIRewriteError, OllamaRewriteError, ValueError) as e:
+        run_one(args.text, backend, jd_text=jd_text, json_output=args.json)
+    except (OpenAIRewriteError, OllamaRewriteError, AgentJDRewriteError, ValueError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 

@@ -26,6 +26,14 @@ def test_parse_args_accepts_ollama_backend() -> None:
     assert args.backend == "ollama"
 
 
+def test_parse_args_accepts_agent_jd_backend() -> None:
+    args = main.parse_args(
+        ["--backend", "agent_jd", "--jd-file", "jd.txt", "worked on the internal API"],
+    )
+    assert args.backend == "agent_jd"
+    assert args.jd_file == "jd.txt"
+
+
 def test_parse_args_rejects_invalid_backend() -> None:
     with pytest.raises(SystemExit):
         main.parse_args(["--backend", "invalid", "worked on the internal API"])
@@ -53,6 +61,19 @@ def test_rewrite_with_backend_ollama_dispatch() -> None:
         result = main.rewrite_with_backend("hello", "ollama")
     mock_ollama.assert_called_once_with("hello")
     assert result.changes == ["ollama"]
+
+
+def test_rewrite_with_backend_agent_jd_dispatch() -> None:
+    with patch("main.rewrite_with_agent_jd") as mock_agent:
+        mock_agent.return_value = RewriteResult("a", "b", ["agent_jd"])
+        result = main.rewrite_with_backend("hello", "agent_jd", jd_text="jd content")
+    mock_agent.assert_called_once_with("hello", "jd content")
+    assert result.changes == ["agent_jd"]
+
+
+def test_rewrite_with_backend_agent_jd_requires_jd_text() -> None:
+    with pytest.raises(ValueError, match="requires --jd-file"):
+        main.rewrite_with_backend("hello", "agent_jd")
 
 
 def test_rewrite_with_backend_invalid_raises_value_error() -> None:
