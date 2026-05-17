@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "resume-bullet-rewriter"
+version = "0.1.0"
+description = "CLI for rewriting resume bullets with rules, LLM backends, and JD-aware agent pipeline."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[project.scripts]
+resume-rewrite = "main:main"
+resume-bench = "bench:main"
+
+[tool.setuptools]
+py-modules = [
+    "main",
+    "bench",
+    "benchmark_utils",
+    "rewriter",
+    "rules",
+    "llm_openai",
+    "llm_ollama",
+    "llm_agent_jd",
+    "agent_jd_types",
+    "faithfulness_guard",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"

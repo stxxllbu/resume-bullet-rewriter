@@ -13,20 +13,29 @@ CLI that rewrites resume bullets.
 
 ## Setup (optional)
 
+Python **3.10+** recommended.
+
 ```bash
 cd resume-bullet-rewriter
 python3 -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+
+# Editable install + CLI entry points (runtime still has no pip dependencies)
+pip install -e .
+
+# For development (pytest)
+pip install -e ".[dev]"
 ```
+
+After install, you can use `resume-rewrite` instead of `python main.py` (same flags).  
+`python main.py` still works without installing.
 
 ## Tests (development)
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements-dev.txt
-python -m pytest tests/ -v
+pip install -e ".[dev]"
+pytest
+# or: python -m pytest tests/ -v
 ```
 
 - **`tests/test_rewriter.py`** — rule engine: whitespace, empty input, phrase/leading rules, no-match normalization, idempotency.
