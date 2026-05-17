@@ -1,2 +1,0 @@
-# V1 uses only the Python standard library — no pip packages required.
-# `pip install -r requirements.txt` is optional and should install nothing.

@@ -9,34 +9,35 @@ CLI that rewrites resume bullets.
 
 ## Requirements
 
-- Python **3.10+** (stdlib only; see `requirements.txt`).
+- Python **3.10+**
+- **Runtime:** no third-party pip packages (stdlib + this repo only; see `dependencies = []` in `pyproject.toml`).
+- **Development:** `pytest` via optional extra `[dev]` in `pyproject.toml`.
 
-## Setup (optional)
-
-Python **3.10+** recommended.
+## Setup
 
 ```bash
 cd resume-bullet-rewriter
-python3 -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-
-# Editable install + CLI entry points (runtime still has no pip dependencies)
-pip install -e .
-
-# For development (pytest)
-pip install -e ".[dev]"
+python3 -m venv .venv          # use Python 3.10+ (e.g. python3.12 -m venv .venv)
+source .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"        # editable install + pytest + CLI entry points
 ```
 
-After install, you can use `resume-rewrite` instead of `python main.py` (same flags).  
-`python main.py` still works without installing.
+After install:
 
-## Tests (development)
+- **`resume-rewrite`** — same flags as `python main.py` (e.g. `resume-rewrite --backend rules "..."`)
+- **`resume-bench`** — same as `python bench.py`
+- **`pytest`** — run the test suite
+
+`python main.py` and `python bench.py` still work without installing.
+
+## Tests
 
 ```bash
-pip install -e ".[dev]"
 pytest
 # or: python -m pytest tests/ -v
 ```
+
+(Requires `pip install -e ".[dev]"` from Setup above.)
 
 - **`tests/test_rewriter.py`** — rule engine: whitespace, empty input, phrase/leading rules, no-match normalization, idempotency.
 - **`tests/test_llm_openai.py`** — OpenAI client with **mocked** `urllib` (no network, no real key). Covers missing key, success parsing, HTTP errors, bad JSON shape, non-string `content`.
@@ -163,7 +164,8 @@ The script builds JSON with **Python** (`json.dumps`) so bullets with quotes or 
 - **`agent_jd_types.py`** — dataclasses for JD-aware rewrite artifacts.
 - **`faithfulness_guard.py`** — rule-based risk flags for potentially unsupported claims.
 - **`llm_agent_jd.py`** — 2-step OpenAI pipeline for `--backend agent_jd`; returns both artifact and `RewriteResult`-compatible output.
-- **`main.py`** — CLI and printing (`--backend rules|openai|ollama|agent_jd`, `--jd-file`, `--json`).
+- **`main.py`** — CLI and printing (`--backend rules|openai|ollama|agent_jd`, `--jd-file`, `--json`); entry point `resume-rewrite`.
+- **`pyproject.toml`** — packaging, `requires-python`, dev deps, and console scripts.
 - **`benchmark_utils.py`** — helper functions for V0 benchmarking (load/run/summarize/write).
 - **`bench.py`** — benchmark runner CLI for multi-backend comparisons.
 - **`scripts/openai_resume_smoke.sh`** — optional curl + Python JSON helper (raw API response).
