@@ -9,12 +9,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from llm_ollama import OllamaRewriteError, rewrite_with_ollama
+from resume_rewriter.llm_ollama import OllamaRewriteError, rewrite_with_ollama
 
 
 def test_ollama_empty_input_no_request() -> None:
     """Empty bullet returns early; must not call Ollama."""
-    with patch("llm_ollama.urllib.request.urlopen") as mock_urlopen:
+    with patch("resume_rewriter.llm_ollama.urllib.request.urlopen") as mock_urlopen:
         r = rewrite_with_ollama("   ")
     mock_urlopen.assert_not_called()
     assert r.original == ""
@@ -22,7 +22,7 @@ def test_ollama_empty_input_no_request() -> None:
     assert r.changes == ["(empty input: skipped)"]
 
 
-@patch("llm_ollama.urllib.request.urlopen")
+@patch("resume_rewriter.llm_ollama.urllib.request.urlopen")
 def test_ollama_success_parses_first_non_empty_line(mock_urlopen: MagicMock) -> None:
     payload = {
         "model": "qwen-test",
@@ -53,7 +53,7 @@ def test_ollama_success_parses_first_non_empty_line(mock_urlopen: MagicMock) -> 
     assert kwargs.get("timeout") == 60.0
 
 
-@patch("llm_ollama.urllib.request.urlopen")
+@patch("resume_rewriter.llm_ollama.urllib.request.urlopen")
 def test_ollama_http_error_wraps(mock_urlopen: MagicMock) -> None:
     import urllib.error
 
@@ -65,7 +65,7 @@ def test_ollama_http_error_wraps(mock_urlopen: MagicMock) -> None:
         rewrite_with_ollama("hello")
 
 
-@patch("llm_ollama.urllib.request.urlopen")
+@patch("resume_rewriter.llm_ollama.urllib.request.urlopen")
 def test_ollama_url_error_wraps(mock_urlopen: MagicMock) -> None:
     import urllib.error
 
@@ -75,7 +75,7 @@ def test_ollama_url_error_wraps(mock_urlopen: MagicMock) -> None:
         rewrite_with_ollama("hello")
 
 
-@patch("llm_ollama.urllib.request.urlopen")
+@patch("resume_rewriter.llm_ollama.urllib.request.urlopen")
 def test_ollama_bad_response_shape(mock_urlopen: MagicMock) -> None:
     mock_cm = MagicMock()
     mock_cm.__enter__.return_value = io.BytesIO(b'{"message":{}}')
@@ -86,7 +86,7 @@ def test_ollama_bad_response_shape(mock_urlopen: MagicMock) -> None:
         rewrite_with_ollama("hello")
 
 
-@patch("llm_ollama.urllib.request.urlopen")
+@patch("resume_rewriter.llm_ollama.urllib.request.urlopen")
 def test_ollama_non_string_content_raises(mock_urlopen: MagicMock) -> None:
     payload = {"message": {"role": "assistant", "content": None}}
     mock_cm = MagicMock()

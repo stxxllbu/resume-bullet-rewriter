@@ -1,5 +1,5 @@
 """
-Ollama /api/chat client for resume bullet rewrite (HTTP; no rule engine).
+OpenAI Chat Completions client for resume bullet rewrite (HTTPS only; no rule engine).
 """
 
 from __future__ import annotations
@@ -9,7 +9,7 @@ import os
 import urllib.error
 import urllib.request
 
-from rewriter import RewriteResult, normalize_whitespace
+from resume_rewriter.rewriter import RewriteResult, normalize_whitespace
 
 SYSTEM_PROMPT = (
     "Rewrite resume bullets. Do not add numbers or metrics not in the original. "
@@ -17,20 +17,26 @@ SYSTEM_PROMPT = (
 )
 
 
-class OllamaRewriteError(Exception):
+class OpenAIRewriteError(Exception):
     """Missing configuration, HTTP failure, or unexpected API response."""
 
 
-def rewrite_with_ollama(raw: str, *, timeout_s: float = 60.0) -> RewriteResult:
+def rewrite_with_openai(raw: str, *, timeout_s: float = 60.0) -> RewriteResult:
     """
-    POST /api/chat; return RewriteResult for the same CLI shape as rules / OpenAI.
+    POST /v1/chat/completions; return RewriteResult for the same CLI shape as rules.
     """
     original = normalize_whitespace(raw)
     if not original:
         return RewriteResult(original="", rewritten="", changes=["(empty input: skipped)"])
 
-    base = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434").strip().rstrip("/")
-    model = os.environ.get("OLLAMA_MODEL", "qwen2.5:7b").strip()
+    api_key = os.environ.get("OPENAI_API_KEY", "").strip()
+    if not api_key:
+        raise OpenAIRewriteError(
+            "OPENAI_API_KEY is not set. Export it before using --llm.",
+        )
+
+    model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini").strip()
+    base = os.environ.get("OPENAI_API_BASE", "https://api.openai.com/v1").rstrip("/")
 
     payload = {
         "model": model,
@@ -38,16 +44,18 @@ def rewrite_with_ollama(raw: str, *, timeout_s: float = 60.0) -> RewriteResult:
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": f"Rewrite this bullet:\n\n{original}"},
         ],
-        "stream": False,
     }
 
-    url = f"{base}/api/chat"
+    url = f"{base}/chat/completions"
     body = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(
         url,
         data=body,
         method="POST",
-        headers={"Content-Type": "application/json"},
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        },
     )
 
     try:
@@ -55,17 +63,17 @@ def rewrite_with_ollama(raw: str, *, timeout_s: float = 60.0) -> RewriteResult:
             data = json.load(resp)
     except urllib.error.HTTPError as e:
         detail = e.read().decode("utf-8", errors="replace")
-        raise OllamaRewriteError(f"HTTP {e.code}: {detail[:500]}") from e
+        raise OpenAIRewriteError(f"HTTP {e.code}: {detail[:500]}") from e
     except urllib.error.URLError as e:
-        raise OllamaRewriteError(f"Request failed: {e.reason}") from e
+        raise OpenAIRewriteError(f"Request failed: {e.reason}") from e
 
     try:
-        content = data["message"]["content"]
-    except (KeyError, TypeError) as e:
-        raise OllamaRewriteError(f"Unexpected API response shape: {data!r}") from e
+        content = data["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError) as e:
+        raise OpenAIRewriteError(f"Unexpected API response shape: {data!r}") from e
 
     if not isinstance(content, str):
-        raise OllamaRewriteError("API returned non-string message content")
+        raise OpenAIRewriteError("API returned non-string message content")
 
     rewritten = ""
     for line in content.splitlines():
@@ -74,5 +82,5 @@ def rewrite_with_ollama(raw: str, *, timeout_s: float = 60.0) -> RewriteResult:
             rewritten = stripped
             break
 
-    changes = [f"Ollama rewrite ({model})"]
+    changes = [f"OpenAI rewrite ({model})"]
     return RewriteResult(original=original, rewritten=rewritten, changes=changes)

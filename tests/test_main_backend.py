@@ -6,8 +6,8 @@ from unittest.mock import patch
 
 import pytest
 
-import main
-from rewriter import RewriteResult
+import resume_rewriter.main as main
+from resume_rewriter.rewriter import RewriteResult
 
 
 def test_parse_args_defaults_to_rules_backend() -> None:
@@ -40,7 +40,7 @@ def test_parse_args_rejects_invalid_backend() -> None:
 
 
 def test_rewrite_with_backend_rules_dispatch() -> None:
-    with patch("main.rewrite") as mock_rules:
+    with patch("resume_rewriter.main.rewrite") as mock_rules:
         mock_rules.return_value = RewriteResult("a", "b", ["rules"])
         result = main.rewrite_with_backend("hello", "rules")
     mock_rules.assert_called_once_with("hello")
@@ -48,7 +48,7 @@ def test_rewrite_with_backend_rules_dispatch() -> None:
 
 
 def test_rewrite_with_backend_openai_dispatch() -> None:
-    with patch("main.rewrite_with_openai") as mock_openai:
+    with patch("resume_rewriter.main.rewrite_with_openai") as mock_openai:
         mock_openai.return_value = RewriteResult("a", "b", ["openai"])
         result = main.rewrite_with_backend("hello", "openai")
     mock_openai.assert_called_once_with("hello")
@@ -56,7 +56,7 @@ def test_rewrite_with_backend_openai_dispatch() -> None:
 
 
 def test_rewrite_with_backend_ollama_dispatch() -> None:
-    with patch("main.rewrite_with_ollama") as mock_ollama:
+    with patch("resume_rewriter.main.rewrite_with_ollama") as mock_ollama:
         mock_ollama.return_value = RewriteResult("a", "b", ["ollama"])
         result = main.rewrite_with_backend("hello", "ollama")
     mock_ollama.assert_called_once_with("hello")
@@ -64,7 +64,7 @@ def test_rewrite_with_backend_ollama_dispatch() -> None:
 
 
 def test_rewrite_with_backend_agent_jd_dispatch() -> None:
-    with patch("main.rewrite_with_agent_jd") as mock_agent:
+    with patch("resume_rewriter.main.rewrite_with_agent_jd") as mock_agent:
         mock_agent.return_value = RewriteResult("a", "b", ["agent_jd"])
         result = main.rewrite_with_backend("hello", "agent_jd", jd_text="jd content")
     mock_agent.assert_called_once_with("hello", "jd content")

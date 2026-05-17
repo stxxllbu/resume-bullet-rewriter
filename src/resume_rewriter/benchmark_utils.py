@@ -14,9 +14,9 @@ from pathlib import Path
 from time import perf_counter
 from typing import Any
 
-from llm_ollama import OllamaRewriteError
-from llm_openai import OpenAIRewriteError
-from main import rewrite_with_backend
+from resume_rewriter.llm_ollama import OllamaRewriteError
+from resume_rewriter.llm_openai import OpenAIRewriteError
+from resume_rewriter.main import rewrite_with_backend
 
 VALID_BACKENDS = {"rules", "openai", "ollama"}
 

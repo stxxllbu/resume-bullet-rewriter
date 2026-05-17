@@ -7,7 +7,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from rules import LEADING_RULES, apply_rule_once, ordered_phrase_rules
+from resume_rewriter.rules import LEADING_RULES, apply_rule_once, ordered_phrase_rules
 
 
 @dataclass(frozen=True)

@@ -17,18 +17,28 @@ CLI that rewrites resume bullets.
 
 ```bash
 cd resume-bullet-rewriter
-python3 -m venv .venv          # use Python 3.10+ (e.g. python3.12 -m venv .venv)
+python3.12 -m venv .venv       # Python 3.10+ required (use 3.12 if available)
 source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"        # editable install + pytest + CLI entry points
 ```
 
-After install:
+After `pip install -e ".[dev]"`:
 
-- **`resume-rewrite`** — same flags as `python main.py` (e.g. `resume-rewrite --backend rules "..."`)
-- **`resume-bench`** — same as `python bench.py`
-- **`pytest`** — run the test suite
+| Command | Purpose |
+|---------|---------|
+| **`resume-rewrite`** | Main CLI (recommended) |
+| **`resume-bench`** | Benchmark runner |
+| **`pytest`** | Test suite |
 
-`python main.py` and `python bench.py` still work without installing.
+Alternative (same behavior as `resume-rewrite`; requires install):
+
+```bash
+python3.12 -m resume_rewriter.main --backend rules "worked on the API"
+```
+
+Use **`python3.12`** (or any Python ≥ 3.10). If `.venv/bin/python` is older than 3.10, prefer `python3.12` or recreate the venv.
+
+**Project layout:** library code under `src/resume_rewriter/` (src layout; install via `pyproject.toml`, not `python main.py` at repo root).
 
 ## Tests
 
@@ -42,25 +52,28 @@ pytest
 - **`tests/test_rewriter.py`** — rule engine: whitespace, empty input, phrase/leading rules, no-match normalization, idempotency.
 - **`tests/test_llm_openai.py`** — OpenAI client with **mocked** `urllib` (no network, no real key). Covers missing key, success parsing, HTTP errors, bad JSON shape, non-string `content`.
 - **`tests/test_llm_ollama.py`** — Ollama client with **mocked** `urllib` (no Ollama process). Covers empty input, success parsing, HTTP / URL errors, bad JSON shape, non-string `content`.
+- **`tests/test_llm_agent_jd.py`**, **`tests/test_faithfulness_guard.py`**, **`tests/test_main_agent_jd_io.py`** — JD pipeline, faithfulness guard, and CLI wiring (mocked HTTP).
 
 ## Usage
+
+All examples below use **`resume-rewrite`**. You may substitute `python3.12 -m resume_rewriter.main` with the same flags after install.
 
 **Single bullet** (quote if it contains spaces):
 
 ```bash
-python main.py "helped with onboarding documentation"
-python main.py --backend rules "helped with onboarding documentation"
-python main.py --backend openai "worked on the internal API"
-python main.py --backend ollama "worked on the internal API"
-python main.py --backend agent_jd --jd-file data/jd_ml_platform.txt "worked on improving training pipeline reliability"
+resume-rewrite "helped with onboarding documentation"
+resume-rewrite --backend rules "helped with onboarding documentation"
+resume-rewrite --backend openai "worked on the internal API"
+resume-rewrite --backend ollama "worked on the internal API"
+resume-rewrite --backend agent_jd --jd-file data/jd_ml_platform.txt "worked on improving training pipeline reliability"
 ```
 
 **OpenAI rewrite** (same input shapes as above; set `--backend openai`):
 
 ```bash
 export OPENAI_API_KEY='sk-...'   # never commit real keys
-python main.py --backend openai "worked on the internal API"
-python main.py --backend openai -f bullets.txt
+resume-rewrite --backend openai "worked on the internal API"
+resume-rewrite --backend openai -f bullets.txt
 ```
 
 Optional environment variables (same defaults as `scripts/openai_resume_smoke.sh`):
@@ -72,10 +85,10 @@ Optional environment variables (same defaults as `scripts/openai_resume_smoke.sh
 
 ```bash
 export OPENAI_API_KEY='sk-...'   # never commit real keys
-python main.py --backend agent_jd --jd-file data/jd_ml_platform.txt "worked on improving training pipeline reliability"
+resume-rewrite --backend agent_jd --jd-file data/jd_ml_platform.txt "worked on improving training pipeline reliability"
 
 # print full intermediate artifact JSON (requirements/gaps/plan/risk_flags)
-python main.py --backend agent_jd --jd-file data/jd_ml_platform.txt --json "worked on improving training pipeline reliability"
+resume-rewrite --backend agent_jd --jd-file data/jd_ml_platform.txt --json "worked on improving training pipeline reliability"
 ```
 
 Sample JD file is provided at `data/jd_ml_platform.txt`.
@@ -84,8 +97,8 @@ Sample JD file is provided at `data/jd_ml_platform.txt`.
 
 ```bash
 # Ollama must be running; model must exist locally, e.g. ollama pull qwen2.5:7b
-python main.py --backend ollama "worked on the internal API"
-python main.py --backend ollama -f bullets.txt
+resume-rewrite --backend ollama "worked on the internal API"
+resume-rewrite --backend ollama -f bullets.txt
 ```
 
 Optional environment variables:
@@ -96,15 +109,15 @@ Optional environment variables:
 **Many bullets** (one per line; empty lines are skipped):
 
 ```bash
-python main.py --file bullets.txt
-python main.py -f bullets.txt
+resume-rewrite --file bullets.txt
+resume-rewrite -f bullets.txt
 ```
 
 **Stdin** (use `-` instead of a path):
 
 ```bash
-cat bullets.txt | python main.py --file -
-printf '%s\n' "worked on the API" | python main.py -f -
+cat bullets.txt | resume-rewrite --file -
+printf '%s\n' "worked on the API" | resume-rewrite -f -
 ```
 
 ## Benchmark (V0)
@@ -113,13 +126,13 @@ Run one dataset across multiple backends and collect comparable results.
 
 ```bash
 # one bullet per line
-python bench.py --input data/bullets.txt
+resume-bench --input data/bullets.txt
 
 # select backends explicitly
-python bench.py --input data/bullets.txt --backends rules,openai,ollama
+resume-bench --input data/bullets.txt --backends rules,openai,ollama
 
 # optional controls
-python bench.py --input data/bullets.txt --max-samples 100 --verbose
+resume-bench --input data/bullets.txt --max-samples 100 --verbose
 ```
 
 Outputs are saved under `benchmark_runs/<timestamp>/` by default:
@@ -157,6 +170,15 @@ The script builds JSON with **Python** (`json.dumps`) so bullets with quotes or 
 
 ## Design
 
+```text
+resume-bullet-rewriter/
+  pyproject.toml
+  src/resume_rewriter/    # import package (pip install -e ".[dev]")
+  tests/
+  data/
+  scripts/
+```
+
 - **`rules.py`** — patterns and replacements only (no logic).
 - **`rewriter.py`** — applies rules in a fixed order; returns a `RewriteResult` dataclass.
 - **`llm_openai.py`** — OpenAI HTTPS client + prompt; returns `RewriteResult` for `--backend openai`.
@@ -164,10 +186,10 @@ The script builds JSON with **Python** (`json.dumps`) so bullets with quotes or 
 - **`agent_jd_types.py`** — dataclasses for JD-aware rewrite artifacts.
 - **`faithfulness_guard.py`** — rule-based risk flags for potentially unsupported claims.
 - **`llm_agent_jd.py`** — 2-step OpenAI pipeline for `--backend agent_jd`; returns both artifact and `RewriteResult`-compatible output.
-- **`main.py`** — CLI and printing (`--backend rules|openai|ollama|agent_jd`, `--jd-file`, `--json`); entry point `resume-rewrite`.
-- **`pyproject.toml`** — packaging, `requires-python`, dev deps, and console scripts.
+- **`main.py`** — CLI and printing (`--backend rules|openai|ollama|agent_jd`, `--jd-file`, `--json`); console entry `resume-rewrite` → `resume_rewriter.main:main`.
 - **`benchmark_utils.py`** — helper functions for V0 benchmarking (load/run/summarize/write).
-- **`bench.py`** — benchmark runner CLI for multi-backend comparisons.
+- **`bench.py`** — benchmark runner CLI (`resume-bench`).
+- **`pyproject.toml`** — packaging (`src/` layout), `requires-python`, dev deps, console scripts.
 - **`scripts/openai_resume_smoke.sh`** — optional curl + Python JSON helper (raw API response).
 
 Rules are **deterministic**: same input → same output. They **do not** add numbers, percentages, or business-impact claims. **`--backend openai` and `--backend ollama` output are not deterministic** (sampling / model-dependent).

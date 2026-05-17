@@ -7,13 +7,13 @@ from unittest.mock import patch
 
 import pytest
 
-from benchmark_utils import (
+from resume_rewriter.benchmark_utils import (
     load_bullets,
     parse_backends,
     run_one,
     summarize_results,
 )
-from rewriter import RewriteResult
+from resume_rewriter.rewriter import RewriteResult
 
 
 def test_load_bullets_skips_empty_lines(tmp_path: Path) -> None:
@@ -32,7 +32,7 @@ def test_parse_backends_invalid_raises() -> None:
 
 
 def test_run_one_success_row_shape() -> None:
-    with patch("benchmark_utils.rewrite_with_backend") as mock_dispatch:
+    with patch("resume_rewriter.benchmark_utils.rewrite_with_backend") as mock_dispatch:
         mock_dispatch.return_value = RewriteResult(
             original="x",
             rewritten="y",
@@ -51,7 +51,7 @@ def test_run_one_success_row_shape() -> None:
 
 
 def test_run_one_error_row_shape() -> None:
-    with patch("benchmark_utils.rewrite_with_backend") as mock_dispatch:
+    with patch("resume_rewriter.benchmark_utils.rewrite_with_backend") as mock_dispatch:
         mock_dispatch.side_effect = ValueError("Unsupported backend")
         row = run_one("input bullet", "bad", 1)
 

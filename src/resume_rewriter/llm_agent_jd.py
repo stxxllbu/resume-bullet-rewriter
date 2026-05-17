@@ -11,9 +11,9 @@ import urllib.request
 from dataclasses import asdict
 from typing import Any, Dict, List, Tuple
 
-from agent_jd_types import AgentJDArtifact, GapItem, JDRequirement, RewritePlanStep
-from faithfulness_guard import run_faithfulness_guard
-from rewriter import RewriteResult, normalize_whitespace
+from resume_rewriter.agent_jd_types import AgentJDArtifact, GapItem, JDRequirement, RewritePlanStep
+from resume_rewriter.faithfulness_guard import run_faithfulness_guard
+from resume_rewriter.rewriter import RewriteResult, normalize_whitespace
 
 ANALYZE_PLAN_SYSTEM_PROMPT = (
     "You analyze one resume bullet against one job description. "

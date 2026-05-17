@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from llm_agent_jd import (
+from resume_rewriter.llm_agent_jd import (
     AgentJDRewriteError,
     artifact_to_json_dict,
     rewrite_with_agent_jd,
@@ -29,7 +29,7 @@ def _mock_urlopen_json_sequence(*payloads: dict) -> MagicMock:
     return mocked
 
 
-@patch("llm_agent_jd.urllib.request.urlopen")
+@patch("resume_rewriter.llm_agent_jd.urllib.request.urlopen")
 def test_run_agent_jd_pipeline_success(mock_urlopen: MagicMock) -> None:
     analyze_content = {
         "requirements": [{"text": "Production deployment", "priority": "must"}],
@@ -72,7 +72,7 @@ def test_run_agent_jd_pipeline_missing_key_raises() -> None:
             os.environ["OPENAI_API_KEY"] = old
 
 
-@patch("llm_agent_jd.urllib.request.urlopen")
+@patch("resume_rewriter.llm_agent_jd.urllib.request.urlopen")
 def test_run_agent_jd_pipeline_invalid_analyze_json_raises(mock_urlopen: MagicMock) -> None:
     mock_urlopen.side_effect = _mock_urlopen_json_sequence(
         {"choices": [{"message": {"content": '{"requirements": "bad"}'}}]},
@@ -83,7 +83,7 @@ def test_run_agent_jd_pipeline_invalid_analyze_json_raises(mock_urlopen: MagicMo
             run_agent_jd_pipeline("Built ML model.", "Need production ML experience.")
 
 
-@patch("llm_agent_jd.urllib.request.urlopen")
+@patch("resume_rewriter.llm_agent_jd.urllib.request.urlopen")
 def test_rewrite_with_agent_jd_returns_rewriteresult(mock_urlopen: MagicMock) -> None:
     analyze_content = {
         "requirements": [{"text": "Latency awareness", "priority": "must"}],
@@ -109,7 +109,7 @@ def test_rewrite_with_agent_jd_returns_rewriteresult(mock_urlopen: MagicMock) ->
     assert "2-step pipeline: analyze_plan -> rewrite" in result.changes
 
 
-@patch("llm_agent_jd.urllib.request.urlopen")
+@patch("resume_rewriter.llm_agent_jd.urllib.request.urlopen")
 def test_artifact_to_json_dict_contains_nested_lists(mock_urlopen: MagicMock) -> None:
     analyze_content = {
         "requirements": [{"text": "Production deployment", "priority": "must"}],

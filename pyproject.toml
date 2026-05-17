@@ -15,24 +15,12 @@ dependencies = []
 dev = ["pytest>=7.0"]
 
 [project.scripts]
-resume-rewrite = "main:main"
-resume-bench = "bench:main"
+resume-rewrite = "resume_rewriter.main:main"
+resume-bench = "resume_rewriter.bench:main"
 
-[tool.setuptools]
-py-modules = [
-    "main",
-    "bench",
-    "benchmark_utils",
-    "rewriter",
-    "rules",
-    "llm_openai",
-    "llm_ollama",
-    "llm_agent_jd",
-    "agent_jd_types",
-    "faithfulness_guard",
-]
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["."]
 addopts = "-q"

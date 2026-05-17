@@ -8,9 +8,9 @@ from unittest.mock import patch
 
 import pytest
 
-import main
-from agent_jd_types import AgentJDArtifact
-from rewriter import RewriteResult
+import resume_rewriter.main as main
+from resume_rewriter.agent_jd_types import AgentJDArtifact
+from resume_rewriter.rewriter import RewriteResult
 
 
 def test_main_agent_jd_requires_jd_file(capsys: pytest.CaptureFixture[str]) -> None:
@@ -36,7 +36,7 @@ def test_main_agent_jd_json_prints_artifact(
         rewritten_bullet="Built ML model for production pipeline.",
         risk_flags=[],
     )
-    with patch("main.run_agent_jd_pipeline", return_value=artifact) as mock_pipeline:
+    with patch("resume_rewriter.main.run_agent_jd_pipeline", return_value=artifact) as mock_pipeline:
         with patch(
             "sys.argv",
             [
@@ -64,7 +64,7 @@ def test_main_agent_jd_uses_rewriteresult_for_normal_output(
 ) -> None:
     jd = tmp_path / "jd.txt"
     jd.write_text("Need production ML systems.", encoding="utf-8")
-    with patch("main.rewrite_with_agent_jd") as mock_rewrite:
+    with patch("resume_rewriter.main.rewrite_with_agent_jd") as mock_rewrite:
         mock_rewrite.return_value = RewriteResult(
             original="Built ML model.",
             rewritten="Built ML model for production pipeline.",

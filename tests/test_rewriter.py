@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from rewriter import normalize_whitespace, rewrite
+from resume_rewriter.rewriter import normalize_whitespace, rewrite
 
 
 def test_normalize_whitespace_collapses_and_strips() -> None:

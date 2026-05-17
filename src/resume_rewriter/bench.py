@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from benchmark_utils import (
+from resume_rewriter.benchmark_utils import (
     append_jsonl_line,
     load_bullets,
     parse_backends,

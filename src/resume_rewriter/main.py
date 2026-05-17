@@ -10,15 +10,15 @@ import json
 import sys
 from pathlib import Path
 
-from llm_agent_jd import (
+from resume_rewriter.llm_agent_jd import (
     AgentJDRewriteError,
     artifact_to_json_dict,
     rewrite_with_agent_jd,
     run_agent_jd_pipeline,
 )
-from llm_ollama import OllamaRewriteError, rewrite_with_ollama
-from llm_openai import OpenAIRewriteError, rewrite_with_openai
-from rewriter import RewriteResult, rewrite
+from resume_rewriter.llm_ollama import OllamaRewriteError, rewrite_with_ollama
+from resume_rewriter.llm_openai import OpenAIRewriteError, rewrite_with_openai
+from resume_rewriter.rewriter import RewriteResult, rewrite
 
 
 def format_output(result: RewriteResult) -> str:

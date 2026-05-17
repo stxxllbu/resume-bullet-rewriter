@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from faithfulness_guard import run_faithfulness_guard
+from resume_rewriter.faithfulness_guard import run_faithfulness_guard
 
 
 def test_guard_flags_new_number_as_metric() -> None:

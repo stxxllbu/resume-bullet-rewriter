@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from llm_openai import OpenAIRewriteError, rewrite_with_openai
+from resume_rewriter.llm_openai import OpenAIRewriteError, rewrite_with_openai
 
 
 def test_openai_empty_input_without_key() -> None:
@@ -35,7 +35,7 @@ def test_openai_missing_key_raises() -> None:
             os.environ["OPENAI_API_KEY"] = old
 
 
-@patch("llm_openai.urllib.request.urlopen")
+@patch("resume_rewriter.llm_openai.urllib.request.urlopen")
 def test_openai_success_parses_first_non_empty_line(mock_urlopen: MagicMock) -> None:
     payload = {
         "choices": [
@@ -67,7 +67,7 @@ def test_openai_success_parses_first_non_empty_line(mock_urlopen: MagicMock) -> 
     assert kwargs.get("timeout") == 60.0
 
 
-@patch("llm_openai.urllib.request.urlopen")
+@patch("resume_rewriter.llm_openai.urllib.request.urlopen")
 def test_openai_http_error_wraps(mock_urlopen: MagicMock) -> None:
     import urllib.error
 
@@ -80,7 +80,7 @@ def test_openai_http_error_wraps(mock_urlopen: MagicMock) -> None:
             rewrite_with_openai("hello")
 
 
-@patch("llm_openai.urllib.request.urlopen")
+@patch("resume_rewriter.llm_openai.urllib.request.urlopen")
 def test_openai_bad_response_shape(mock_urlopen: MagicMock) -> None:
     mock_cm = MagicMock()
     mock_cm.__enter__.return_value = io.BytesIO(b'{"choices":[]}')
@@ -92,7 +92,7 @@ def test_openai_bad_response_shape(mock_urlopen: MagicMock) -> None:
             rewrite_with_openai("hello")
 
 
-@patch("llm_openai.urllib.request.urlopen")
+@patch("resume_rewriter.llm_openai.urllib.request.urlopen")
 def test_openai_non_string_content_raises(mock_urlopen: MagicMock) -> None:
     payload = {"choices": [{"message": {"content": None}}]}
     mock_cm = MagicMock()
